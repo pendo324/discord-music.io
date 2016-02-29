@@ -1,0 +1,14 @@
+# You can get this by typing /@(yourname) without the ()
+# this has to be a string due to JavaScrit quirks, btw
+ownerid: "95301288748658688"
+# the account information for the bot
+botLogin: ""
+botPassword: ""
+# initial volume for the bot to use
+initVolume: 0
+# set the permissions that a new user will get
+# listener -> !np, !queue
+# user -> !skip (starts a vote)
+# mod -> !skip (insta skips), !pause/!play
+# only the owenerid can !summon and !server, as of now
+baseUser: "user"
