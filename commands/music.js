@@ -17,10 +17,10 @@ var util = require("util"),
     moment = require("moment"),
     events = require("events"),
     exec = require("child_process"),
-    RateLimiter = require("limiter").RateLimiter,
+    //RateLimiter = require("limiter").RateLimiter,
     eventEmitter = new events.EventEmitter();
 
-var limiter = new RateLimiter(2, 5000);
+//var limiter = new RateLimiter(2, 5000);
 
 var MusicManager = (function() {
     function MusicManager(discordBot) {
@@ -95,22 +95,26 @@ var MusicManager = (function() {
         var url = MusicManager.addQueue.shift();
         util.log(url);
         //limiter.removeTokens(1, function() {
-        MusicManager.prototype.videoInfo(url, function(info) {
-            MusicManager.queue.push({
-                url: url,
-                videoUrl: info.url,
-                title: info.title,
-                length: info.duration,
-                ext: info.ext,
-                localFile: ""
-            });
+        MusicManager.prototype.videoInfo(url, function(err, info) {
+            if (err === true) {
 
-            if (MusicManager.queue.length == 1) {
-                MusicManager.prototype.download(0);
-            }
+            } else {
+                MusicManager.queue.push({
+                    url: url,
+                    videoUrl: info.url,
+                    title: info.title,
+                    length: info.duration,
+                    ext: info.ext,
+                    localFile: ""
+                });
 
-            if (MusicManager.downloading === false) {
-                MusicManager.prototype.download(MusicManager.queue.length);
+                if (MusicManager.queue.length == 1) {
+                    MusicManager.prototype.download(0);
+                }
+
+                if (MusicManager.downloading === false) {
+                    MusicManager.prototype.download(MusicManager.queue.length);
+                }
             }
 
             //eventEmitter.emit("info");
@@ -198,6 +202,8 @@ var MusicManager = (function() {
 
     MusicManager.prototype.download = function download(queuePos) {
         // downloads the first in queue with an empty localFile
+
+        // TODO: check if the file already exists BEFORE downloading again
         util.log(MusicManager.queue.length);
 
         var audioPrefix = "./audio/";
@@ -295,6 +301,7 @@ var MusicManager = (function() {
                             if (err === false) {
                                 util.log("song done");
                                 MusicManager.pausedAt = 0;
+                                MusicManager.emit("song done");
                                 eventEmitter.emit("song done");
                             }
                         });
@@ -371,10 +378,11 @@ var MusicManager = (function() {
     MusicManager.prototype.videoInfo = function videoInfo(link, callback) {
         youtubedl.getInfo(link, function(err, info) {
             if (err) {
+                callback(true, info);
                 util.log(err);
-            };
-
-            callback(info);
+            } else {
+                callback(false, info);
+            }
         });
     };
 
@@ -392,7 +400,16 @@ var MusicManager = (function() {
     MusicManager.prototype.formatQueue = function formatQueue(queue) {
         var out = "```The current song queue is: \n";
         for (var i in queue) {
-            out = out + (i * 1 + 1) + ". " + queue[i].title + "\n";
+            if (i === 0) {
+                out = out + (i * 1 + 1) + ". [Now Playing]" + queue[i].title;
+            } else {
+                out = out + (i * 1 + 1) + ". " + queue[i].title;
+            }
+            if (queue[i].localFile === "" || queue[i].localFile === "in progress") {
+                out = out + " [downloading]\n";
+            } else {
+                out = out + "\n";
+            }
         }
         out = out + "```";
 
@@ -460,5 +477,7 @@ var MusicManager = (function() {
 
     return MusicManager;
 })();
+
+util.inherits(MusicManager, events.EventEmitter);
 
 exports.MusicManager = MusicManager;

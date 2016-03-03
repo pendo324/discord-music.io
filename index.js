@@ -45,6 +45,10 @@ var getPermissions = function getPermissions(userId) {
     return perms;
 };
 
+music.on("song done", function() {
+    util.log("song done event recieved in index!");
+});
+
 bot.on("ready", function() {
     util.log(bot.user.username + " - (" + bot.user.id + ")");
 });
